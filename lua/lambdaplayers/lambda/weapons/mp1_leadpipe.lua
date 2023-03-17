@@ -1,3 +1,9 @@
+local Vector = Vector
+local util_Decal = util.Decal
+local isstring = isstring
+local EffectData = EffectData
+local util_Effect = util.Effect
+local LambdaIsValid = LambdaIsValid
 local IsValid = IsValid
 local CurTime = CurTime
 local random = math.random
@@ -14,7 +20,7 @@ local meleeTrTbl = {
 }
 
 local mat_types = {
-    [ "default" ] =        { sound = "MP1.LeadPipeDefaultHit", decal = "mp1_meleeimpact", effect = "" },
+    [ MAT_DEFAULT ] =      { sound = "MP1.LeadPipeDefaultHit", decal = "mp1_meleeimpact", effect = "" },
     [ MAT_WOOD ] =         { sound = "MP1.LeadPipeWoodHit", decal = "mp1_meleeimpact", effect = "" },
     [ MAT_METAL ] =        { sound = "MP1.LeadPipeMetalHit", decal = "mp1_meleeimpact", effect = "" },
     [ MAT_VENT ] =         { sound = "MP1.LeadPipeMetalSolidHit", decal = "mp1_meleeimpact", effect = "" },
@@ -28,10 +34,7 @@ local mat_types = {
 }
 
 local function getMatTypeTemplates( mat_type ) 
-    local tab = mat_types[ mat_type ]
-    if istable(tab) then return { sound = tab.sound, decal = tab.decal, effect = tab.effect } end
-
-    tab = mat_types[ "default" ]
+    local tab = ( mat_types[ mat_type ] or mat_types[ MAT_DEFAULT ] )
     return { sound = tab.sound, decal = tab.decal, effect = tab.effect }
 end
 
@@ -55,14 +58,14 @@ local function LeadPipeAttack( self, wepent, dir, right )
 
         local hitEnt = tr.Entity
         if IsValid( hitEnt ) then
-            util.Decal( effect_tab.decal, tr.HitPos + tr.HitNormal, tr.HitPos - tr.HitNormal, self )
+            util_Decal( effect_tab.decal, tr.HitPos + tr.HitNormal, tr.HitPos - tr.HitNormal, self )
 
             if isstring( effect_tab.effect ) then 
                 local effectData = EffectData()
                 effectData:SetOrigin( first_trace_hitpos )
                 effectData:SetNormal( tr.HitNormal )
                 effectData:SetEntity( target )
-                util.Effect( effect_tab.effect, effectData, true, true )
+                util_Effect( effect_tab.effect, effectData, true, true )
             end
 
             local dmginfo = DamageInfo()
@@ -77,12 +80,12 @@ local function LeadPipeAttack( self, wepent, dir, right )
 
             hitEnt:DispatchTraceAttack( dmginfo, tr )
         else
-            util.Decal( effect_tab.decal, first_trace_hitpos + first_trace_normal, first_trace_hitpos - first_trace_normal, self )
+            util_Decal( effect_tab.decal, first_trace_hitpos + first_trace_normal, first_trace_hitpos - first_trace_normal, self )
             
             local effectData = EffectData()
             effectData:SetOrigin( first_trace_hitpos )
             effectData:SetNormal( first_trace_normal )
-            util.Effect( effect_tab.effect, effectData, true, true )
+            util_Effect( effect_tab.effect, effectData, true, true )
         end
     end
 

@@ -1,3 +1,6 @@
+local coroutine_wait = coroutine.wait
+local random = math.random
+
 table.Merge( _LAMBDAPLAYERSWEAPONS, {
     mp1_pumpshotgun = {
         model = "models/mp1/Weapons/w_shotgun.mdl",
@@ -41,6 +44,35 @@ table.Merge( _LAMBDAPLAYERSWEAPONS, {
                     LAMBDA_MP1:CreateShellEject( wepent )
                 end )
             end
+
+            return true
+        end,
+
+        OnReload = function( self, wepent )
+            self:RemoveGesture( ACT_HL2MP_GESTURE_RELOAD_AR2 )
+            local reloadLayer = self:AddGesture( ACT_HL2MP_GESTURE_RELOAD_AR2 )
+
+            self:SetIsReloading( true )
+            self:Thread( function()
+                coroutine_wait( 0.1 )
+
+                while ( self.l_Clip < self.l_MaxClip ) do
+                    if self.l_Clip > 0 and random( 1, 2 ) == 1 and self:InCombat() and self:IsInRange( self:GetEnemy(), 512 ) and self:CanSee( self:GetEnemy() ) then break end 
+
+                    if !self:IsValidLayer( reloadLayer ) then
+                        reloadLayer = self:AddGesture( ACT_HL2MP_GESTURE_RELOAD_AR2 )
+                    end                    
+                    self:SetLayerCycle( reloadLayer, 0.2 )
+                    self:SetLayerPlaybackRate( reloadLayer, 1.6 )
+
+                    self.l_Clip = self.l_Clip + 1
+                    wepent:EmitSound( "MP1.PumpShotgunReload" )
+                    coroutine_wait( 0.4 )
+                end
+
+                self:RemoveGesture( ACT_HL2MP_GESTURE_RELOAD_AR2 )
+                self:SetIsReloading( false )
+            end, "MP1_ShotgunReload" )
 
             return true
         end

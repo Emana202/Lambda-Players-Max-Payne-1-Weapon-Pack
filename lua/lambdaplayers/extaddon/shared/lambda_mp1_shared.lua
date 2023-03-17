@@ -7,6 +7,13 @@ util.PrecacheModel( "models/mp1/Projectiles/casing_50cal.mdl" )
 util.PrecacheModel( "models/mp1/Projectiles/casing_12ga.mdl" )
 util.PrecacheModel( "models/mp1/Projectiles/casing_300cal.mdl" )
 
+util.PrecacheModel( "models/mp1/Weapons/w_beretta_clip.mdl" )
+util.PrecacheModel( "models/mp1/Weapons/w_coltcommando_clip.mdl" )
+util.PrecacheModel( "models/mp1/Weapons/w_ingram_clip.mdl" )
+util.PrecacheModel( "models/mp1/Weapons/w_jackhammer_clip.mdl" )
+util.PrecacheModel( "models/mp1/Weapons/w_mp5_clip.mdl" )
+util.PrecacheModel( "models/mp1/Weapons/w_sniperrifle_clip.mdl" )
+
 if ( CLIENT ) then
 
 	net.Receive( "lambda_mp1_setmuzzlename", function()
@@ -43,12 +50,10 @@ if ( SERVER ) then
 	local IsFirstTimePredicted = IsFirstTimePredicted
 	local isvector = isvector
 	local isentity = isentity
+	local CurTime = CurTime
+	local Vector = Vector
 
-	local serverRagdolls = GetConVar( "ai_serverragdolls" )
-	local damageMult = GetConVar( "mp1_damage_mul" )
-	local fireProjectiles = GetConVar( "mp1_projectiles" )
-	local projVelMult = GetConVar( "mp1_prj_vel_mul" )
-
+	local serverRagdolls, damageMult, fireProjectiles, projVelMult
 	local fireBulletTbl = {
 		AmmoType = "mp1_ammo",
 		Tracer = 1,
@@ -142,17 +147,21 @@ if ( SERVER ) then
 			if mp1Data.EjectShell != false then LAMBDA_MP1:CreateShellEject( weapon ) end
         end
 
+		damageMult = damageMult or GetConVar( "mp1_damage_mul" )
 		local dmg_mul = damageMult:GetFloat()
+
 		local spread = mp1Data.Spread
 		local numShots = ( mp1Data.Pellets or 1 )
 		local dmg = mp1Data.Damage
 		local force = mp1Data.Force
 
+		fireProjectiles = fireProjectiles or GetConVar( "mp1_projectiles" )
 		if fireProjectiles:GetBool() then
 			local mul = ( mp1Data.BulletSpeedScale or 5 )
 			local bulletVel = ( mp1Data.BulletVelocity or 1968.5 )
 			local model = ( mp1Data.BulletModel or "models/mp1/Projectiles/tracer_9mm.mdl" )
 
+			projVelMult = projVelMult or GetConVar( "mp1_prj_vel_mul" )
 			local velMult = projVelMult:GetFloat()
 
 			local targVel = ( target:IsNextBot() and target.loco:GetVelocity() or target:GetVelocity() )
@@ -202,9 +211,12 @@ if ( SERVER ) then
 				local hitEnt = tr.Entity
 				if IsValid( hitEnt ) and IsValid( attacker ) then 
 					dmginfo:SetInflictor( attacker )
+					
+					serverRagdolls = serverRagdolls or GetConVar( "ai_serverragdolls" )
 					if isShotgun and serverRagdolls:GetBool() then 
 						dmginfo:SetDamageForce( dmginfo:GetDamageForce() / 6 ) 
 					end
+					
 					if hitEnt:IsNextBot() or hitEnt:IsNPC() or hitEnt:IsPlayer() then 
 						dmginfo:SetDamageForce( dmginfo:GetDamageForce() + Vector( 0, 0, force * 575 ) ) 
 					end
