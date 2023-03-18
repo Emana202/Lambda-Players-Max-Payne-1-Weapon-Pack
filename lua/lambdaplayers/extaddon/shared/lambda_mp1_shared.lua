@@ -202,6 +202,7 @@ if ( SERVER ) then
 			end
 		else
 			fireBulletTbl.Attacker = lambda
+			fireBulletTbl.IgnoreEntity = lambda
 			fireBulletTbl.Damage = ( mp1Data.Damage * dmg_mul )
 			fireBulletTbl.Force = ( mp1Data.Force or 1 )
 			fireBulletTbl.Dir = aimVec:Forward()

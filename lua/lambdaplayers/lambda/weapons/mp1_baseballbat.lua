@@ -3,7 +3,6 @@ local util_Decal = util.Decal
 local isstring = isstring
 local EffectData = EffectData
 local util_Effect = util.Effect
-local LambdaIsValid = LambdaIsValid
 local IsValid = IsValid
 local CurTime = CurTime
 local random = math.random

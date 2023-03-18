@@ -1,9 +1,16 @@
+local holdType
+if ( SERVER ) then
+    holdType = table.Copy( _LAMBDAPLAYERSHoldTypeAnimations[ "rpg" ] )
+    holdType.crouchIdle = ACT_HL2MP_IDLE_CROUCH_AR2
+    holdType.crouchWalk = ACT_HL2MP_WALK_CROUCH_AR2
+end
+
 table.Merge( _LAMBDAPLAYERSWEAPONS, {
     mp1_sniperrifle = {
         model = "models/mp1/Weapons/w_sniperrifle.mdl",
         origin = "Max Payne 1",
         prettyname = "Sniper Rifle",
-        holdtype = "rpg",
+        holdtype = holdType,
         killicon = "weapon_mp1_sniperrifle",
         bonemerge = true,
         islethal = true,
