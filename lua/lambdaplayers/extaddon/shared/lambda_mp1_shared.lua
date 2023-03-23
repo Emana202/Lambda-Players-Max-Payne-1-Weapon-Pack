@@ -19,6 +19,7 @@ if ( CLIENT ) then
 	net.Receive( "lambda_mp1_setmuzzlename", function()
 		local weapon = net.ReadEntity()
 		if !IsValid( weapon ) then return end
+		
 		weapon.MuzzleName = net.ReadString()
 	end )
 
@@ -38,9 +39,17 @@ if ( CLIENT ) then
 		weapon.magazinecollidesound = net.ReadString()
 	end )
 
+	local function OnLambdaInitialize( lambda, weapon )
+		if !IsValid( weapon ) then return end
+		weapon.MuzzleName = "mp1_muzzleflash_beretta"
+	end
+
+	hook.Add( "LambdaOnInitialize", "Lambda_MP1_OnLambdaInitialize", OnLambdaInitialize )
+
 end
 
 if ( SERVER ) then
+
 	local random = math.random
 	local Rand = math.Rand
 	local ents_Create = ents.Create
@@ -234,4 +243,5 @@ if ( SERVER ) then
 			end
 		end
 	end
+
 end
