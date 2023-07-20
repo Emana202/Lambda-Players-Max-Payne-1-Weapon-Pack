@@ -62,7 +62,7 @@ if ( SERVER ) then
 	local CurTime = CurTime
 	local Vector = Vector
 
-	local serverRagdolls, damageMult, fireProjectiles, projVelMult
+	local damageMult, fireProjectiles, projVelMult
 	local fireBulletTbl = {
 		AmmoType = "mp1_ammo",
 		Tracer = 1,
@@ -105,7 +105,7 @@ if ( SERVER ) then
 	end
 
 	function LAMBDA_MP1:CreateShellEject( weapon )
-        if !IsFirstTimePredicted() then return end
+        if !IsFirstTimePredicted() or weapon:IsDormant() then return end
 
 		local fx = EffectData()
 		fx:SetEntity( weapon )
@@ -116,7 +116,7 @@ if ( SERVER ) then
 	end
 
 	function LAMBDA_MP1:DropMagazine( weapon, attach )
-        if !IsFirstTimePredicted() then return end
+        if !IsFirstTimePredicted() or weapon:IsDormant() then return end
 
 		local fx = EffectData()
         fx:SetEntity( weapon )
@@ -147,14 +147,13 @@ if ( SERVER ) then
 		local targPos = firePos + aimVec:Up() * random( -25, 25 ) + aimVec:Right() * random( -25, 25 )
 		aimVec = ( targPos - shootPos ):Angle()
 
-        if IsFirstTimePredicted() then
+        if IsFirstTimePredicted() and !weapon:IsDormant() then
 			local fx = EffectData()
 			fx:SetEntity( weapon )
 			fx:SetAttachment( mp1Data.MuzzleAttachment or 1 )
 			util_Effect( "mp1_muzzle", fx, true, true )
-
-			if mp1Data.EjectShell != false then LAMBDA_MP1:CreateShellEject( weapon ) end
         end
+		if mp1Data.EjectShell != false then LAMBDA_MP1:CreateShellEject( weapon ) end
 
 		damageMult = damageMult or GetConVar( "mp1_damage_mul" )
 		local dmg_mul = damageMult:GetFloat()
@@ -222,8 +221,7 @@ if ( SERVER ) then
 				if IsValid( hitEnt ) and IsValid( attacker ) then 
 					dmginfo:SetInflictor( attacker )
 					
-					serverRagdolls = serverRagdolls or GetConVar( "ai_serverragdolls" )
-					if isShotgun and serverRagdolls:GetBool() then 
+					if isShotgun and hitEnt:IsRagdoll() then 
 						dmginfo:SetDamageForce( dmginfo:GetDamageForce() / 6 ) 
 					end
 					

@@ -58,7 +58,6 @@ table.Merge( _LAMBDAPLAYERSWEAPONS, {
 
             local bullet = ents_Create( "ent_mp1_grenade_m79" )
             bullet:SetOwner( self )
-            bullet.swep = wepent
             bullet.entOwner = self
             bullet.damage = 200
             bullet.radius = 375
@@ -67,6 +66,9 @@ table.Merge( _LAMBDAPLAYERSWEAPONS, {
             bullet:SetAngles( fireAng )
             bullet:Spawn()
             bullet:Activate() 
+                
+            bullet.l_UseLambdaDmgModifier = true
+            bullet.l_killiconname = wepent.l_killiconname
 
             local phys = bullet:GetPhysicsObject()
             if IsValid( phys ) then phys:SetVelocity( fireAng:Forward() * 2250 ) end

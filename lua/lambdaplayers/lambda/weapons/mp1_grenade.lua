@@ -31,7 +31,7 @@ table.Merge( _LAMBDAPLAYERSWEAPONS, {
                 local targetPos = target:GetPos()
 
                 local fireAng = ( targetPos - fireSrc ):Angle()
-                local firePos = ( targetPos + fireAng:Up() * ( random( -50, 50 ) + ( fireSrc:Distance( targetPos ) / 15 ) ) + fireAng:Right() * random( -50, 50 ) )
+                local firePos = ( targetPos + fireAng:Up() * ( random( -20, 20 ) + ( fireSrc:Distance( targetPos ) / 17.5 ) ) + fireAng:Right() * random( -50, 50 ) )
                 fireAng = ( firePos - fireSrc ):Angle()
 
                 local prj = ents_Create( "ent_mp1_grenade_thrown" )
@@ -39,12 +39,14 @@ table.Merge( _LAMBDAPLAYERSWEAPONS, {
                 prj:SetAngles( fireAng )
                 prj:Spawn()
                 prj:Activate() 
-
+                
                 prj:SetOwner( self )
-                prj.swep = wepent
                 prj.entOwner = self
                 prj.Damage = 150
                 prj.Radius = 375
+                
+                prj.l_UseLambdaDmgModifier = true
+                prj.l_killiconname = wepent.l_killiconname
 
                 local phys = prj:GetPhysicsObject()
                 if IsValid( phys ) then
