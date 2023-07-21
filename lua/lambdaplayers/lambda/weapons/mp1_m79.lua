@@ -74,10 +74,10 @@ table.Merge( _LAMBDAPLAYERSWEAPONS, {
             if IsValid( phys ) then phys:SetVelocity( fireAng:Forward() * 2250 ) end
 
             if IsFirstTimePredicted() then
-                local fx = EffectData()
-                fx:SetEntity( wepent )
-                fx:SetAttachment( 1 )
-                util_Effect( "mp1_muzzle", fx, true, true )
+                net.Start( "lambda_mp1_createmuzzleflash" )
+                    net.WriteEntity( wepent )
+                    net.WriteUInt( 1, 3 )
+                net.Broadcast()
             end
             
             return true

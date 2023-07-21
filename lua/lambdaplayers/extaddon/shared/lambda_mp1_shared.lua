@@ -1,5 +1,7 @@
 local IsValid = IsValid
 local net = net
+local EffectData = EffectData
+local util_Effect = util.Effect
 
 util.PrecacheModel( "models/mp1/Projectiles/casing_9mm.mdl" )
 util.PrecacheModel( "models/mp1/Projectiles/casing_40mm.mdl" )
@@ -39,6 +41,16 @@ if ( CLIENT ) then
 		weapon.magazinecollidesound = net.ReadString()
 	end )
 
+	net.Receive( "lambda_mp1_createmuzzleflash", function()
+		local weapon = net.ReadEntity()
+		if !IsValid( weapon ) or !weapon:GetAttachment( 1 ) then return end
+
+		local fx = EffectData()
+		fx:SetEntity( weapon )
+		fx:SetAttachment( net.ReadUInt( 3 ) )
+		util_Effect( "mp1_muzzle", fx, true, true )
+	end )
+
 	local function OnLambdaInitialize( lambda, weapon )
 		if !IsValid( weapon ) then return end
 		weapon.MuzzleName = "mp1_muzzleflash_beretta"
@@ -54,8 +66,6 @@ if ( SERVER ) then
 	local Rand = math.Rand
 	local ents_Create = ents.Create
 	local sound_Play = sound.Play
-	local EffectData = EffectData
-	local util_Effect = util.Effect
 	local IsFirstTimePredicted = IsFirstTimePredicted
 	local isvector = isvector
 	local isentity = isentity
@@ -72,6 +82,7 @@ if ( SERVER ) then
 	util.AddNetworkString( "lambda_mp1_setmuzzlename" )
 	util.AddNetworkString( "lambda_mp1_setshelldata" )
 	util.AddNetworkString( "lambda_mp1_setmagazinedata" )
+	util.AddNetworkString( "lambda_mp1_createmuzzleflash" )
 
 	LAMBDA_MP1 = LAMBDA_MP1 or {}
 
@@ -105,7 +116,7 @@ if ( SERVER ) then
 	end
 
 	function LAMBDA_MP1:CreateShellEject( weapon )
-        if !IsFirstTimePredicted() or weapon:IsDormant() then return end
+        if !IsFirstTimePredicted() then return end
 
 		local fx = EffectData()
 		fx:SetEntity( weapon )
@@ -116,7 +127,7 @@ if ( SERVER ) then
 	end
 
 	function LAMBDA_MP1:DropMagazine( weapon, attach )
-        if !IsFirstTimePredicted() or weapon:IsDormant() then return end
+        if !IsFirstTimePredicted() then return end
 
 		local fx = EffectData()
         fx:SetEntity( weapon )
@@ -147,12 +158,12 @@ if ( SERVER ) then
 		local targPos = firePos + aimVec:Up() * random( -25, 25 ) + aimVec:Right() * random( -25, 25 )
 		aimVec = ( targPos - shootPos ):Angle()
 
-        if IsFirstTimePredicted() and !weapon:IsDormant() then
-			local fx = EffectData()
-			fx:SetEntity( weapon )
-			fx:SetAttachment( mp1Data.MuzzleAttachment or 1 )
-			util_Effect( "mp1_muzzle", fx, true, true )
-        end
+		if IsFirstTimePredicted() then
+			net.Start( "lambda_mp1_createmuzzleflash" )
+				net.WriteEntity( weapon )
+				net.WriteUInt( ( mp1Data.MuzzleAttachment or 1 ), 3 )
+			net.Broadcast()
+		end
 		if mp1Data.EjectShell != false then LAMBDA_MP1:CreateShellEject( weapon ) end
 
 		damageMult = damageMult or GetConVar( "mp1_damage_mul" )
@@ -172,8 +183,10 @@ if ( SERVER ) then
 			projVelMult = projVelMult or GetConVar( "mp1_prj_vel_mul" )
 			local velMult = projVelMult:GetFloat()
 
-			local targVel = ( target:IsNextBot() and target.loco:GetVelocity() or target:GetVelocity() )
-			aimVec = ( ( targPos + targVel * ( ( targPos:Distance(shootPos) / bulletVel ) * Rand( 0.33, 1.0 ) ) ) - shootPos ):Angle()
+			if isentity( target ) and IsValid( target ) then
+				local targVel = ( target:IsNextBot() and target.loco:GetVelocity() or target:GetVelocity() )
+				aimVec = ( ( targPos + targVel * ( ( targPos:Distance(shootPos) / bulletVel ) * Rand( 0.33, 1.0 ) ) ) - shootPos ):Angle()
+			end
 
 			for i = 1, numShots do 
 				local bullet = ents_Create( "ent_mp1_bullet" )
