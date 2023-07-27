@@ -9,6 +9,7 @@ table.Merge( _LAMBDAPLAYERSWEAPONS, {
         killicon = "weapon_mp1_sawedshotgun",
         bonemerge = true,
         islethal = true,
+        dropentity = "weapon_mp1_sawedshotgun",
 
         clip = 2,
         keepdistance = 500,

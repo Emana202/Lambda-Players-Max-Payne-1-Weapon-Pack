@@ -101,6 +101,7 @@ table.Merge( _LAMBDAPLAYERSWEAPONS, {
         ismelee = true,
         bonemerge = true,
         islethal = true,
+        dropentity = "weapon_mp1_baseballbat",
 
         keepdistance = 10,
         attackrange = 100,
