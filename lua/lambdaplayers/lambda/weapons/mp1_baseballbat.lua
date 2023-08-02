@@ -7,6 +7,7 @@ local IsValid = IsValid
 local CurTime = CurTime
 local random = math.random
 local DamageInfo = DamageInfo
+local ParticleEffect = ParticleEffect
 local ConVarNumber = cvars.Number
 local bit_bor = bit.bor
 local TraceLine = util.TraceLine
@@ -19,11 +20,11 @@ local meleeTrTbl = {
 }
 
 local mat_types = {
-    [ MAT_DEFAULT ] =      { sound = "MP1.BaseballDefaultHit", decal = "mp1_meleeimpact", effect = "" },
-    [ MAT_WOOD ] =         { sound = "MP1.BaseballWoodHit", decal = "mp1_meleeimpact", effect = "" },
-    [ MAT_METAL ] =        { sound = "MP1.BaseballMetalHit", decal = "mp1_meleeimpact", effect = "" },
-    [ MAT_VENT ] =         { sound = "MP1.BaseballMetalSolidHit", decal = "mp1_meleeimpact", effect = "" },
-    [ MAT_GLASS ] =        { sound = "MP1.BaseballGlassHit", decal = "mp1_meleeimpact_glass", effect = "" },
+    [ MAT_DEFAULT ] =      { sound = "MP1.BaseballDefaultHit", decal = "mp1_meleeimpact", particle = "mp1_melee_impact" },
+    [ MAT_WOOD ] =         { sound = "MP1.BaseballWoodHit", decal = "mp1_meleeimpact", particle = "mp1_melee_impact" },
+    [ MAT_METAL ] =        { sound = "MP1.BaseballMetalHit", decal = "mp1_meleeimpact", particle = "mp1_melee_impact" },
+    [ MAT_VENT ] =         { sound = "MP1.BaseballMetalSolidHit", decal = "mp1_meleeimpact", particle = "mp1_melee_impact" },
+    [ MAT_GLASS ] =        { sound = "MP1.BaseballGlassHit", decal = "mp1_meleeimpact_glass", particle = "mp1_melee_impact" },
 
     [ MAT_FLESH ] =        { sound = "MP1.MeleeHit", decal = "Impact.Flesh", effect = "BloodImpact" },
     [ MAT_BLOODYFLESH ] =  { sound = "MP1.MeleeHit", decal = "Impact.Flesh", effect = "BloodImpact" },
@@ -59,11 +60,14 @@ local function BaseballBatAttack( self, wepent, dir, right )
         if IsValid( hitEnt ) then
             util_Decal( effect_tab.decal, tr.HitPos + tr.HitNormal, tr.HitPos - tr.HitNormal, self )
 
-            if isstring( effect_tab.effect ) then 
+            local particle = effect_tab.particle
+            if particle then
+                ParticleEffect( particle, ( tr.HitPos + tr.HitNormal ), tr.HitNormal:Angle() )
+            elseif isstring( effect_tab.effect ) then 
                 local effectData = EffectData()
                 effectData:SetOrigin( first_trace_hitpos )
                 effectData:SetNormal( tr.HitNormal )
-                effectData:SetEntity( target )
+                effectData:SetEntity( hitEnt )
                 util_Effect( effect_tab.effect, effectData, true, true )
             end
 
@@ -81,10 +85,15 @@ local function BaseballBatAttack( self, wepent, dir, right )
         else
             util_Decal( effect_tab.decal, first_trace_hitpos + first_trace_normal, first_trace_hitpos - first_trace_normal, self )
             
-            local effectData = EffectData()
-            effectData:SetOrigin( first_trace_hitpos )
-            effectData:SetNormal( first_trace_normal )
-            util_Effect( effect_tab.effect, effectData, true, true )
+            local particle = effect_tab.particle
+            if particle then
+                ParticleEffect( particle, first_trace_hitpos + first_trace_normal, tr.HitNormal:Angle() )
+            elseif isstring( effect_tab.effect ) then 
+                local effectData = EffectData()
+                effectData:SetOrigin( tr.HitPos )
+                effectData:SetNormal( first_trace_normal )
+                util_Effect( effect_tab.effect, effectData, true, true )
+            end
         end
     end
 
@@ -101,7 +110,7 @@ table.Merge( _LAMBDAPLAYERSWEAPONS, {
         ismelee = true,
         bonemerge = true,
         islethal = true,
-        dropentity = "weapon_mp1_baseballbat",
+        dropentity = "ent_mp1_baseballbat",
 
         keepdistance = 10,
         attackrange = 100,

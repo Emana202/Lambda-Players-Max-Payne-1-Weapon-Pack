@@ -15,7 +15,7 @@ table.Merge( _LAMBDAPLAYERSWEAPONS, {
         killicon = "weapon_mp1_m79",
         bonemerge = true,
         islethal = true,
-        dropentity = "weapon_mp1_m79",
+        dropentity = "ent_mp1_m79",
 
         clip = 1,
         keepdistance = 750,
@@ -60,14 +60,17 @@ table.Merge( _LAMBDAPLAYERSWEAPONS, {
             local bullet = ents_Create( "ent_mp1_grenade_m79" )
             bullet:SetOwner( self )
             bullet.entOwner = self
-            bullet.damage = 200
-            bullet.radius = 375
+
+            bullet.damage = 166
+            bullet.radius = 393.7
+            bullet.hotspot = 196.8
+            bullet.dmgtype = ( DMG_BLAST + DMG_AIRBOAT )
 
             bullet:SetPos( fireSrc )
             bullet:SetAngles( fireAng )
             bullet:Spawn()
             bullet:Activate() 
-                
+
             bullet.l_UseLambdaDmgModifier = true
             bullet.l_killiconname = wepent.l_killiconname
 

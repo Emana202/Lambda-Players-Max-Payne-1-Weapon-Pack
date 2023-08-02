@@ -13,7 +13,7 @@ table.Merge( _LAMBDAPLAYERSWEAPONS, {
         killicon = "weapon_mp1_grenade",
         bonemerge = true,
         islethal = true,
-        dropentity = "weapon_mp1_grenade",
+        dropentity = "ent_mp1_grenade",
 
         clip = 1,
         keepdistance = 600,
@@ -43,9 +43,12 @@ table.Merge( _LAMBDAPLAYERSWEAPONS, {
                 
                 prj:SetOwner( self )
                 prj.entOwner = self
-                prj.Damage = 150
-                prj.Radius = 375
                 
+                prj.damage = 116
+                prj.radius = 393.7
+                prj.hotspot = 196.8
+                prj.dmgtype = ( DMG_BLAST + DMG_AIRBOAT )
+
                 prj.l_UseLambdaDmgModifier = true
                 prj.l_killiconname = wepent.l_killiconname
 

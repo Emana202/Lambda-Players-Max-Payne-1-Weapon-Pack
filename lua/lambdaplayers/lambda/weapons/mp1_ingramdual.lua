@@ -9,7 +9,7 @@ table.Merge( _LAMBDAPLAYERSWEAPONS, {
         killicon = "weapon_mp1_ingramdual",
         bonemerge = true,
         islethal = true,
-        dropentity = "weapon_mp1_ingramdual",
+        dropentity = "ent_mp1_ingramdual",
 
         clip = 100,
         keepdistance = 750,
@@ -25,7 +25,8 @@ table.Merge( _LAMBDAPLAYERSWEAPONS, {
         },
 
         OnDeploy = function( self, wepent )
-            wepent.MP1Data = {}
+            LAMBDA_MP1:InitializeWeapon( self, wepent, "weapon_mp1_ingramdual" )
+
             wepent.MP1Data.Damage = 5
             wepent.MP1Data.Spread = 1.5
             wepent.MP1Data.Force = 3

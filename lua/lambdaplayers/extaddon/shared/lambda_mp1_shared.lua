@@ -51,9 +51,22 @@ if ( CLIENT ) then
 		util_Effect( "mp1_muzzle", fx, true, true )
 	end )
 
+	local function GetWeaponSmokeBlastParticle()
+		return "mp1_smokeblast_eject"
+	end
+
+	local function GetWeaponMuzzleFlashPos( weapon, muzzleAttach )
+		local attach = weapon:GetAttachment( muzzleAttach )
+		return ( attach and attach.Pos or weapon:GetPos() )
+	end
+
 	local function OnLambdaInitialize( lambda, weapon )
 		if !IsValid( weapon ) then return end
+		
 		weapon.MuzzleName = "mp1_muzzleflash_beretta"
+		weapon.BulletSize = 1
+		weapon.GetSmokeBlastParticle = GetWeaponSmokeBlastParticle
+		weapon.GetMuzzleFlashPos = GetWeaponMuzzleFlashPos
 	end
 
 	hook.Add( "LambdaOnInitialize", "Lambda_MP1_OnLambdaInitialize", OnLambdaInitialize )
@@ -71,6 +84,8 @@ if ( SERVER ) then
 	local isentity = isentity
 	local CurTime = CurTime
 	local Vector = Vector
+	local GetConVar = GetConVar
+	local weapons_Get = weapons.Get
 
 	local damageMult, fireProjectiles, projVelMult
 	local fireBulletTbl = {
@@ -137,6 +152,68 @@ if ( SERVER ) then
         util_Effect( "mp1_magazine", fx, true, true )
 	end
 
+	local function LambdaGetActiveWeapon( lambda )
+		return lambda.WeaponEnt
+	end
+
+	local function WeaponFireCallBack( weapon, attacker, tr, dmginfo, phys_bullet_ent )
+		if !IsValid( attacker ) then return end
+
+		local hitEnt = tr.Entity
+		if !IsValid( hitEnt ) then return end
+
+		dmginfo:SetAttacker( attacker )
+		dmginfo:SetInflictor( phys_bullet_ent or weapon )
+
+		if weapon.MP1Data.IsShotgun and ( hitEnt:IsPlayer() or hitEnt:IsRagdoll() ) then 
+			dmginfo:SetDamageForce( dmginfo:GetDamageForce() / 6 ) 
+		end	
+
+		local class = hitEnt:GetClass()
+		if class == "npc_rollermine" or class == "npc_turret_floor" or class == "npc_manhack" then 
+			dmginfo:SetDamageType( DMG_PREVENT_PHYSICS_FORCE ) 
+		end
+		
+		if hitEnt:IsNPC() or hitEnt:IsPlayer() then 
+			dmginfo:SetDamageForce( dmginfo:GetDamageForce() + vector_up * ( weapon.MP1Data.Force * 575 ) )
+		end
+	end
+	local WeaponFireCallBackImpact = {
+		default = function( weapon, attacker, tr, dmginfo, muzzleAttach )
+			if ( CLIENT ) then return end
+
+			net.Start( "MPX_ShootBulletDefault" )
+				net.WriteEntity( weapon )
+				net.WriteVector( tr.StartPos )
+				net.WriteVector( tr.HitPos )
+				net.WriteUInt( muzzleAttach, 4 )
+			net.Broadcast()							
+
+			local impact_sound = mp1_lib.hit_sound[tr.MatType]
+			if impact_sound and !tr.HitSky then sound_Play( impact_sound, tr.HitPos ) end	
+		end,
+		physics = function( weapon, attacker, tr, dmginfo )
+			local sound = mp1_lib.hit_sound[ tr.MatType ]
+			if sound and !tr.HitSky then weapon:EmitSound( sound ) end	
+		end
+	}
+
+	function LAMBDA_MP1:InitializeWeapon( lambda, weapon, class )
+		weapon.MP1Data = {}
+		weapon.MP1Data.StoredClass = class
+		weapon.MP1Data.StoredTable = weapons_Get( class )
+		weapon.MP1Data.DoImpactEffect = weapon.MP1Data.StoredTable.DoImpactEffect
+
+		lambda.GetActiveWeapon = LambdaGetActiveWeapon
+		weapon.FireCallBack = WeaponFireCallBack
+		weapon.FireCallBackImpact = WeaponFireCallBackImpact
+	end
+
+	local function OnBulletDoImpactEffect( bullet, ... )
+		if !bullet.l_Lambdified or !IsValid( bullet.entOwner ) then return end
+		return bullet.wp_DoImpactEffect( bullet.wp_stored, ... ) 
+	end
+
 	function LAMBDA_MP1:FireWeapon( lambda, weapon, target )
 	    if lambda.l_Clip <= 0 then lambda:ReloadWeapon() return true end
 	    local mp1Data = weapon.MP1Data
@@ -158,13 +235,17 @@ if ( SERVER ) then
 		local targPos = firePos + aimVec:Up() * random( -25, 25 ) + aimVec:Right() * random( -25, 25 )
 		aimVec = ( targPos - shootPos ):Angle()
 
+		local muzzleAttach = ( mp1Data.MuzzleAttachment or 1 )
 		if IsFirstTimePredicted() then
 			net.Start( "lambda_mp1_createmuzzleflash" )
 				net.WriteEntity( weapon )
-				net.WriteUInt( ( mp1Data.MuzzleAttachment or 1 ), 3 )
+				net.WriteUInt( muzzleAttach, 3 )
 			net.Broadcast()
 		end
-		if mp1Data.EjectShell != false then LAMBDA_MP1:CreateShellEject( weapon ) end
+		
+		if mp1Data.EjectShell != false then 
+			LAMBDA_MP1:CreateShellEject( weapon ) 
+		end
 
 		damageMult = damageMult or GetConVar( "mp1_damage_mul" )
 		local dmg_mul = damageMult:GetFloat()
@@ -189,7 +270,7 @@ if ( SERVER ) then
 			end
 
 			for i = 1, numShots do 
-				local bullet = ents_Create( "ent_mp1_bullet" )
+				local bullet = ents_Create( "ent_mp1_bullet_easy" )
 				local spread = ( ( spread * 5 ) / ( random( 1, 100 ) > 75 and 1 or 3 ) )
 				local vel = ( ( bulletVel + ( bulletVel / 100 ) * random( -mul, mul ) ) * velMult )
 
@@ -200,6 +281,7 @@ if ( SERVER ) then
 					damage = ( dmg * dmg_mul ),
 					spread = spread,
 					bullcam = false,
+					owner = lambda
 				}
 				
 				local ang = aimVec
@@ -209,17 +291,26 @@ if ( SERVER ) then
 					ang:RotateAroundAxis( ang:Up(), Rand( -spread, spread ) )
 				end
 
-				bullet:SetOwner( lambda )
-				bullet.swep = weapon
-				bullet.entOwner = lambda
-	
+				bullet.ForwardDir = ang:Forward() 
+				bullet.DistanceLimit = ( mp1Data.Distance or 0 )
+				bullet.muzzleAttach = muzzleAttach
+				bullet.DoImpactEffect = OnBulletDoImpactEffect
+
 				bullet:SetAngles( ang )
 				bullet:SetPos( shootPos )
 				bullet:Spawn()
 				bullet:Activate() 
-	
-				local phys = bullet:GetPhysicsObject()
-				if IsValid( phys ) then phys:SetVelocity( ang:Forward() * vel ) end 
+				
+				bullet.l_Lambdified = true
+            	bullet.l_UseLambdaDmgModifier = true
+            	bullet.l_killiconname = mp1Data.StoredClass
+
+				bullet.swep = nil
+				bullet.swep_recovery_class = weapon.MP1Data.StoredTable
+				bullet.wp_DoImpactEffect = mp1Data.DoImpactEffect
+				bullet.wp_stored_class = mp1Data.StoredClass
+				bullet.wp_stored = mp1Data.StoredTable
+				bullet.wp = weapon
 			end
 		else
 			fireBulletTbl.Attacker = lambda
@@ -228,23 +319,8 @@ if ( SERVER ) then
 			fireBulletTbl.Force = ( mp1Data.Force or 1 )
 			fireBulletTbl.Dir = aimVec:Forward()
 			fireBulletTbl.Src = shootPos
-
 			fireBulletTbl.Callback = function( attacker, tr, dmginfo )
-				local hitEnt = tr.Entity
-				if IsValid( hitEnt ) and IsValid( attacker ) then 
-					dmginfo:SetInflictor( attacker )
-					
-					if isShotgun and hitEnt:IsRagdoll() then 
-						dmginfo:SetDamageForce( dmginfo:GetDamageForce() / 6 ) 
-					end
-					
-					if hitEnt:IsNextBot() or hitEnt:IsNPC() or hitEnt:IsPlayer() then 
-						dmginfo:SetDamageForce( dmginfo:GetDamageForce() + Vector( 0, 0, force * 575 ) ) 
-					end
-				end
-				
-				local impact_sound = mp1_lib.hit_sound[ tr.MatType ]
-				if impact_sound then sound_Play( impact_sound, tr.HitPos ) end
+				weapon:FireCallBack( attacker, tr, dmginfo )
 			end
 
 			for i = 1, numShots do 
