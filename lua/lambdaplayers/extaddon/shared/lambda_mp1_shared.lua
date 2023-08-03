@@ -51,7 +51,12 @@ if ( CLIENT ) then
 		util_Effect( "mp1_muzzle", fx, true, true )
 	end )
 
-	local function GetWeaponSmokeBlastParticle()
+	local function GetWeaponSmokeBlastParticle( weapon )
+		local lambda = weapon:GetParent()
+		if IsValid( lambda ) then
+			local wepData = _LAMBDAPLAYERSWEAPONS[ lambda:GetWeaponName() ]
+			if wepData and wepData.origin == "Max Payne 2" then return "mp2_smokeblast_eject" end
+		end
 		return "mp1_smokeblast_eject"
 	end
 
@@ -87,7 +92,7 @@ if ( SERVER ) then
 	local GetConVar = GetConVar
 	local weapons_Get = weapons.Get
 
-	local damageMult, fireProjectiles, projVelMult
+	local damageMult, fireProjectiles, projVelMult, infiniteAmmo
 	local fireBulletTbl = {
 		AmmoType = "mp1_ammo",
 		Tracer = 1,
@@ -130,14 +135,14 @@ if ( SERVER ) then
 		net.Broadcast()
 	end
 
-	function LAMBDA_MP1:CreateShellEject( weapon )
+	function LAMBDA_MP1:CreateShellEject( weapon, attach )
         if !IsFirstTimePredicted() then return end
 
 		local fx = EffectData()
 		fx:SetEntity( weapon )
 		fx:SetOrigin( weapon:GetPos() )
 		fx:SetNormal( weapon:GetForward() )
-		fx:SetAttachment( weapon.MP1Data.ShellAttachment or 2 )
+		fx:SetAttachment( attach or weapon.MP1Data.ShellAttachment or 2 )
 		util_Effect( "mp1_shell", fx, true, true )
 	end
 
@@ -217,8 +222,10 @@ if ( SERVER ) then
 	function LAMBDA_MP1:FireWeapon( lambda, weapon, target )
 	    if lambda.l_Clip <= 0 then lambda:ReloadWeapon() return true end
 	    local mp1Data = weapon.MP1Data
+	    
+	    infiniteAmmo = infiniteAmmo or GetConVar( "mp1_infinite_ammo" )
+	    if infiniteAmmo:GetInt() != 2 then lambda.l_Clip = lambda.l_Clip - ( mp1Data.ClipUsage or 1 ) end
 
-	    lambda.l_Clip = lambda.l_Clip - ( mp1Data.ClipUsage or 1 )
 	    lambda.l_WeaponUseCooldown = CurTime() + ( mp1Data.RateOfFire or 0.1 )
 
 	    local fireAnim = mp1Data.Animation
