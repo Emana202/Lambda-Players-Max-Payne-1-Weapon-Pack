@@ -32,7 +32,7 @@ table.Merge( _LAMBDAPLAYERSWEAPONS, {
                 local targetPos = target:GetPos()
 
                 local fireAng = ( targetPos - fireSrc ):Angle()
-                local firePos = ( targetPos + fireAng:Up() * ( random( -20, 20 ) + ( fireSrc:Distance( targetPos ) / 4 ) ) + fireAng:Right() * random( -50, 50 ) )
+                local firePos = ( targetPos + fireAng:Up() * ( random( -20, 20 ) + ( fireSrc:Distance( targetPos ) / 15 ) ) + fireAng:Right() * random( -50, 50 ) )
                 fireAng = ( firePos - fireSrc ):Angle()
 
                 local prj = ents_Create( "ent_mp1_molotov_thrown" )
