@@ -53,7 +53,7 @@ if ( CLIENT ) then
 
 	local function GetWeaponSmokeBlastParticle( weapon )
 		local lambda = weapon:GetParent()
-		if IsValid( lambda ) then
+		if IsValid( lambda ) and lambda.IsLambdaPlayer then
 			local wepData = _LAMBDAPLAYERSWEAPONS[ lambda:GetWeaponName() ]
 			if wepData and wepData.origin == "Max Payne 2" then return "mp2_smokeblast_eject" end
 		end
